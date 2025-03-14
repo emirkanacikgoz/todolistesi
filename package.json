@@ -1,0 +1,18 @@
+{
+  "name": "todolistesi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "server": "json-server --watch db.json --port 4444",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "jquery": "^3.7.1",
+    "json-server": "^1.0.0-beta.3"
+  }
+}
