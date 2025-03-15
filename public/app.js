@@ -1,22 +1,44 @@
 $(document).ready(function () {
+    // checkbox değiştiğinde tamamlanma durumunu güncelle
+    $(".task-checkbox").change(function () {
+        let id = $(this).data("id"); // görev id'sini alma
+        let listItem = $(this).closest("li");
+        let taskText = listItem.find(".task-text");
+
+        // ajax tamamlama durumu güncelleme
+        $.ajax({
+            url: `/toggle/${id}`,
+            method: "POST",
+            success: function () {
+                taskText.toggleClass("completed"); // üstünü çizme
+            },
+            error: function (err) {
+                console.error("Güncelleme hatası:", err);
+            }
+        });
+    });
+
+    // güncelleme butonuna basıldığında
     $(".update-btn").click(function () {
-        let listItem = $(this).closest("li"); // İlgili liste öğesini al
-        let textSpan = listItem.find("span"); // Mevcut metni al
-        let currentText = textSpan.text(); // Görevin mevcut başlığı
-        let id = listItem.find(".update-form").data("id"); // ID'yi al
+        let listItem = $(this).closest("li"); // güncellenecek liste öğesini al
+        let textSpan = listItem.find(".task-text"); // mevcut metni al
+        let currentText = textSpan.text(); // görevin mevcut başlığı
+        let id = listItem.find(".update-form").data("id"); // id'yi al
+        let isCompleted = listItem.find(".task-checkbox").is(":checked"); // görev tamamlama durumunu kontrol
 
-        // Güncelleme butonunu gizle
+        // güncelleme butonu ve checkbox gizleme
         $(this).hide();
+        listItem.find(".task-checkbox").hide();
 
-        // Input alanı oluştur
-        let inputField = $(`<input type="text" class="form-control form-control-sm" value="${currentText}">`);
+        // input alanı oluşturma
+        let inputField = $(`<input type="text" class="form-control form-control-sm edit-input" value="${currentText}">`);
         textSpan.replaceWith(inputField); // Metni input ile değiştir
 
-        // Onay butonu ekle
-        let confirmBtn = $(`<button class="btn btn-success btn-sm ms-2">✔</button>`);
-        listItem.find("div").prepend(confirmBtn);
+        // güncelleme için onay butonu ekleme
+        let confirmBtn = $(`<button class="btn btn-primary btn-sm ms-2 confirm-edit-btn">✔</button>`);
+        listItem.find(".btn-group").prepend(confirmBtn);
 
-        // Onay butonuna tıklanınca güncelleme yap
+        // onay butonuna tıklanınca güncelleme yapma
         confirmBtn.click(function () {
             let newTitle = inputField.val();
 
@@ -27,9 +49,13 @@ $(document).ready(function () {
                     contentType: "application/json",
                     data: JSON.stringify({ title: newTitle }),
                     success: function () {
-                        inputField.replaceWith(`<span>${newTitle}</span>`); // Input'u tekrar metne çevir
-                        confirmBtn.remove(); // Onay butonunu kaldır
-                        listItem.find(".update-btn").show(); // Güncelleme butonunu geri getir
+                        let updatedSpan = $(`<span class="task-text">${newTitle}</span>`);
+                        if (isCompleted) updatedSpan.addClass("completed"); // eğer görev tamamlanmışsa üstü çizili kalsın
+                        
+                        inputField.replaceWith(updatedSpan); // inputu tekrar metne çevir
+                        confirmBtn.remove(); // onay butonunu kaldırma
+                        listItem.find(".update-btn").show(); // güncelleme butonunu geri getir
+                        listItem.find(".task-checkbox").show(); // checkbox geri getir
                     },
                     error: function (err) {
                         console.error("Güncelleme hatası:", err);

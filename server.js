@@ -5,7 +5,7 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
-// Middleware'ler
+// middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
@@ -13,16 +13,16 @@ app.use(express.static("public"));
 app.set("view engine", "ejs");
 
 
-// JSON Server için API URL
+// json server url
 const API_URL = "http://localhost:4444/todos";
 
-// Ana sayfa - Görevleri getir ve göster
+// görevleri getirme ve gösterme
 app.get("/", async (req, res) => {
     const todos = await fetch(API_URL).then(res => res.json());
     res.render("index", { todos });
 });
 
-// Yeni görev ekleme
+// yeni görev ekleme
 app.post("/add", async (req, res) => {
     const { title } = req.body;
     await fetch(API_URL, {
@@ -33,26 +33,26 @@ app.post("/add", async (req, res) => {
     res.redirect("/");
 });
 
-// Görev güncelleme (tamamlama durumu değiştir)
+// görev güncelleme (tamamlama durumu değiştir)
 app.put("/update/:id", async (req, res) => {
     const id = req.params.id;
     const { title } = req.body; // Yeni başlığı al
 
     try {
-        // Güncellenen görevi al
+        // güncellenen görevi al
         const todo = await fetch(`${API_URL}/${id}`).then(res => res.json());
 
-        // Güncelleme isteği gönder
+        // güncelleme isteği gönder
         await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             body: JSON.stringify({
                 ...todo,
-                title: title // Yeni başlık ekleniyor
+                title: title // yeni başlık ekleme
             }),
             headers: { "Content-Type": "application/json" }
         });
 
-        res.sendStatus(200); // Başarılı
+        res.sendStatus(200); // başarılı
     } catch (error) {
         console.error("Güncelleme hatası:", error);
         res.sendStatus(500);
@@ -61,11 +61,60 @@ app.put("/update/:id", async (req, res) => {
 
 
 
-// Görev silme
+// görev silme
 app.post("/delete/:id", async (req, res) => {
     const id = req.params.id;
     await fetch(`${API_URL}/${id}`, { method: "DELETE" });
     res.redirect("/");
 });
 
+// görev tamamlama (checkbox ile işaretleme)
+app.post("/toggle/:id", async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        // mevcut görevi al
+        const todo = await fetch(`${API_URL}/${id}`).then(res => res.json());
+
+        // yeni tamamlanma durumunu kaydet
+        await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+                ...todo,
+                completed: !todo.completed // mevcut durumun tersini kaydet
+            }),
+            headers: { "Content-Type": "application/json" }
+        });
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error("Tamamlama hatası:", error);
+        res.sendStatus(500);
+    }
+});
+
+// tüm görevleri göster
+app.get("/", async (req, res) => {
+    const todos = await fetch(API_URL).then(res => res.json());
+    res.render("index", { todos });
+});
+
+// yapılacak görevleri göster 
+app.get("/tasks/pending", async (req, res) => {
+    const todos = await fetch(API_URL).then(res => res.json());
+    const pendingTasks = todos.filter(todo => !todo.completed);
+    res.render("index", { todos: pendingTasks });
+});
+
+// tamamlanmış görevleri göster
+app.get("/tasks/completed", async (req, res) => {
+    const todos = await fetch(API_URL).then(res => res.json());
+    const completedTasks = todos.filter(todo => todo.completed);
+    res.render("index", { todos: completedTasks });
+});
+
+
+
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
+
+
